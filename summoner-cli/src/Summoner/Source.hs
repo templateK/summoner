@@ -14,6 +14,7 @@ module Summoner.Source
        , sourceCodec
        , fetchSources
        , fetchSource
+       , transformSource
        ) where
 
 import Colourista (errorMessage, infoMessage)
@@ -26,6 +27,8 @@ import Summoner.Tree (TreeFs, pathToTree)
 
 import qualified Data.Map.Strict as Map
 import qualified Toml
+
+import qualified  Data.Text as T
 
 
 -- | Type of the source resource.
@@ -49,6 +52,13 @@ showSource = \case
     Url _ -> "Url"
     Local _ -> "Local"
     Raw _ -> "Raw"
+
+-- | Simple repalcement of predefined variables
+transformSource :: Text -> Source -> Source
+transformSource replacementText src = case src of
+    Raw meat -> Raw (T.replace "PROJECT-NAME" replacementText meat)
+    Url _   -> src
+    Local _ -> src
 
 -- TODO: return Maybe
 matchUrl :: Source -> Either TomlBiMapError Text

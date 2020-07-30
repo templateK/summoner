@@ -44,7 +44,7 @@ import Summoner.GhcVer (ghcTable)
 import Summoner.License (License (..), LicenseName, parseLicenseName, showLicenseWithDesc)
 import Summoner.Mode (isNonInteractive)
 import Summoner.Project (generateProjectNonInteractive, initializeProject)
-import Summoner.Source (fetchSources)
+import Summoner.Source (fetchSources, transformSource)
 import Summoner.Tui.Field (disabledAttr)
 import Summoner.Tui.Form (KitForm, SummonForm (..), getCurrentFocus, isActive, mkForm, recreateForm)
 import Summoner.Tui.Kit
@@ -56,6 +56,7 @@ import qualified Brick (on)
 import qualified Graphics.Vty as V
 import qualified Paths_summoner_tui as Meta (version)
 
+import qualified Data.Map.Strict as M
 
 -- | Main function that parses @CLI@ arguments and runs @summoner@ in TUI mode.
 summonTui :: IO ()
@@ -86,7 +87,14 @@ summonTuiNew newOpts@NewOpts{..} = do
             newOptsProjectName
             finalConfig
         () <$ exitSuccess
-    files <- fetchSources newOptsConnectMode (cFiles finalConfig)
+
+    -- transfrom files if hie.yaml
+    let cFiles' = M.adjust (transformSource newOptsProjectName)
+                           "hie.yaml"
+                           (cFiles finalConfig)
+
+    files <- fetchSources newOptsConnectMode cFiles'
+
     configFilePath <- findConfigFile
     let initialKit = configToSummonKit
             newOptsProjectName
